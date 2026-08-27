@@ -1,6 +1,6 @@
 /**
- * Nihongo Flow - Main Application Logic
- * PWA & iOS Safari Speech Synthesis, Google HD Native Voice, AI Natural Phrase Generator, Furigana Engine, Voice Lab
+ * Nihongo Flow / JapaFlow - Main Application Logic
+ * Integrates Real-time AI Translation & Context Analysis, Google HD TTS, Furigana Engine, Voice Lab
  */
 
 // State Management
@@ -12,7 +12,8 @@ const STATE = {
   searchQuery: '',
   theme: localStorage.getItem('nhf_theme') || 'dark',
   ttsSpeed: parseFloat(localStorage.getItem('nhf_speed') || '1.0'),
-  voiceEngine: localStorage.getItem('nhf_voice_engine') || 'google_hd', // 'google_hd' or 'system'
+  voiceEngine: localStorage.getItem('nhf_voice_engine') || 'google_hd',
+  geminiApiKey: localStorage.getItem('nhf_gemini_key') || '',
   selectedVoice: null,
   
   // Flashcard state
@@ -51,6 +52,25 @@ const AI_NATURAL_PATTERNS = [
       vn: "Tiếc quá hôm nay sức khỏe tôi không tốt lắm, xin phép hẹn anh/chị dịp khác được không ạ?",
       note: "Văn phong từ chối cực kỳ lịch sự và tế nhị với đồng nghiệp/cấp trên.",
       level: "business", category: "work", situation: "Từ chối lời mời của đồng nghiệp/sếp"
+    }
+  },
+  {
+    keywords: ["tên", "tôi tên là", "tên là", "tên tôi là"],
+    casual: {
+      jp: "〜って呼んでね！よろしく！",
+      ruby: "〜って<ruby>呼<rt>よ</rt></ruby>んでね！よろしく！",
+      romaji: "...tte yonde ne! Yoroshiku!",
+      vn: "Cứ gọi mình là [Tên] nhé! Rất vui được làm quen!",
+      note: "Cách giới thiệu tên thân mật, cởi mở nhất với bạn bè cùng lứa.",
+      level: "casual", category: "casual", situation: "Giới thiệu tên với bạn bè mới"
+    },
+    polite: {
+      jp: "初めまして、〜と申します。よろしくお願いいたします。",
+      ruby: "<ruby>初<rt>はじ</rt></ruby>めまして、〜と<ruby>申<rt>もう</rt></ruby>します。よろしくお<ruby>願<rt>ねが</rt></ruby>いいたします。",
+      romaji: "Hajimemashite, ... to moushimasu. Yoroshiku onegai itashimasu.",
+      vn: "Rất vui được gặp anh/chị, tôi tên là [Tên]. Rất mong nhận được sự giúp đỡ ạ.",
+      note: "Cách tự giới thiệu trang trọng, lịch sự tuyệt đối khi đi làm hoặc gặp người lớn tuổi.",
+      level: "business", category: "work", situation: "Tự giới thiệu bản thân lịch sự"
     }
   },
   {
@@ -109,65 +129,17 @@ const AI_NATURAL_PATTERNS = [
       note: "Cách khen món ăn cực kỳ tinh tế và nịnh lòng đầu bếp người Nhật.",
       level: "polite", category: "restaurant", situation: "Khen đồ ăn nhà hàng lịch sự"
     }
-  },
-  {
-    keywords: ["wifi", "mật khẩu", "pass wifi", "mạng", "mạng wifi"],
-    casual: {
-      jp: "Wi-Fiのパスワードって何だっけ？",
-      ruby: "Wi-Fiのパスワードって<ruby>何<rt>なん</rt></ruby>だっけ？",
-      romaji: "Waifai no pasuwaado tte nan dakke?",
-      vn: "Mật khẩu Wi-Fi là gì thế nhỉ?",
-      note: "Hỏi tự nhiên với bạn bè trong phòng/quán.",
-      level: "casual", category: "casual", situation: "Hỏi pass Wi-Fi thân mật"
-    },
-    polite: {
-      jp: "Wi-Fiのパスワードを教えていただけますか？",
-      ruby: "Wi-Fiのパスワードを<ruby>教<rt>おし</rt></ruby>えていただけますか？",
-      romaji: "Waifai no pasuwaado o oshiete itadakemasu ka?",
-      vn: "Cho tôi xin mật khẩu Wi-Fi với được không ạ?",
-      note: "Người Nhật đọc Wi-Fi là 'Waifai'.",
-      level: "polite", category: "restaurant", situation: "Hỏi mật khẩu Wifi tại quán cafe/khách sạn"
-    }
-  },
-  {
-    keywords: ["đang làm gì", "làm gì đấy", "rảnh không", "bận không", "đi chơi"],
-    casual: {
-      jp: "今何してる？ちょっとお茶しない？",
-      ruby: "<ruby>今<rt>いま</rt></ruby><ruby>何<rt>なに</rt></ruby>してる？ちょっとお<ruby>茶<rt>ちゃ</rt></ruby>しない？",
-      romaji: "Ima nani shiteru? Chotto ocha shinai?",
-      vn: "Đang làm gì đấy? Đi uống cafe/trà một lát không?",
-      note: "'お茶しない' (ocha shinai) là rủ đi cafe/trà sữa tán gẫu cực kỳ thông dụng.",
-      level: "casual", category: "casual", situation: "Nhắn tin rủ bạn bè đi cafe"
-    },
-    polite: {
-      jp: "本日ご都合はいかがでしょうか？",
-      ruby: "<ruby>本日<rt>ほんじつ</rt></ruby>ご<ruby>都合<rt>つごう</rt></ruby>はいかがでしょうか？",
-      romaji: "Honjitsu gotsugou wa ikaga deshou ka?",
-      vn: "Hôm nay anh/chị có tiện thời gian không ạ?",
-      note: "Hỏi lịch hẹn lịch sự chuẩn công sở.",
-      level: "business", category: "work", situation: "Hẹn gặp đồng nghiệp/khách hàng"
-    }
-  },
-  {
-    keywords: ["xin lỗi", "muộn", "đến muộn", "tắc đường", "trễ"],
-    casual: {
-      jp: "ごめん！電車遅れてて、あと10分くらいで着く！",
-      ruby: "ごめん！<ruby>電車<rt>でんしゃ</rt></ruby><ruby>遅<rt>おく</rt></ruby>れてて、あと10<ruby>分<rt>ぷん</rt></ruby>くらいで<ruby>着<rt>つ</rt></ruby>く！",
-      romaji: "Gomen! Densha okuretete, ato juppun kurai de tsuku!",
-      vn: "Xin lỗi nhé! Tàu bị trễ xíu, tầm 10 phút nữa tao tới nơi!",
-      note: "Cách nhắn tin báo trễ giờ cho bạn bè tự nhiên, chân thành.",
-      level: "casual", category: "casual", situation: "Báo đến muộn vì kẹt tàu/xe cho bạn bè"
-    },
-    polite: {
-      jp: "大変申し訳ございません。交通渋滞のため、15分ほど遅れます。",
-      ruby: "<ruby>大変<rt>たいへん</rt></ruby><ruby>申<rt>もう</rt></ruby>し<ruby>訳<rt>わけ</rt></ruby>ございません。<ruby>交通<rt>こうつう</rt></ruby><ruby>渋滞<rt>じゅうたい</rt></ruby>のため、15<ruby>分<rt>ふん</rt></ruby>ほど<ruby>遅<rt>おく</rt></ruby>れます。",
-      romaji: "Taihen moushiwake gozaimasen. Koutsuu juutai no tame, juugofun hodo okuremasu.",
-      vn: "Tôi vô cùng xin lỗi. Vì tắc đường nên tôi sẽ đến muộn khoảng 15 phút ạ.",
-      note: "Mẫu câu báo trễ giờ chuẩn mực khi đi làm tại Nhật.",
-      level: "business", category: "work", situation: "Báo trễ giờ cho sếp/khách hàng"
-    }
   }
 ];
+
+// Common Vietnamese Name to Japanese Katakana Mapping
+const VN_NAME_TO_KANA = {
+  "quý": "クィ", "quy": "クィ", "nam": "ナム", "hùng": "フン", "hung": "フン",
+  "dũng": "ズン", "dung": "ズン", "minh": "ミン", "hương": "フオン", "huong": "フオン",
+  "linh": "リン", "trang": "チャン", "ngọc": "ゴック", "ngoc": "ゴック", "hà": "ハー", "ha": "ハー",
+  "tuấn": "トゥアン", "tuan": "トゥアン", "hoàng": "ホアン", "hoang": "ホアン",
+  "long": "ロン", "anh": "アイン", "thảo": "タオ", "thao": "タオ", "mai": "マイ"
+};
 
 // --------------------------------------------------------------------------
 // INITIALIZATION
@@ -187,7 +159,7 @@ function registerPWA() {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js').then((reg) => {
-        console.log('Nihongo Flow PWA Service Worker Registered', reg.scope);
+        console.log('JapaFlow PWA Service Worker Registered', reg.scope);
       }).catch((err) => {
         console.log('PWA Service Worker registration skipped', err);
       });
@@ -243,7 +215,7 @@ function updateThemeIcon(isSakura) {
 }
 
 // --------------------------------------------------------------------------
-// HIGH-QUALITY NATURAL JAPANESE TTS (Google HD Native Voice & Apple Safari Kyoko)
+// HIGH-QUALITY NATURAL JAPANESE TTS
 // --------------------------------------------------------------------------
 let currentAudioElement = null;
 let availableVoices = [];
@@ -270,18 +242,12 @@ function initTTSVoices() {
   }
 }
 
-/**
- * Phát âm tiếng Nhật với chất lượng giọng người thật bản xứ (Google HD Native Stream)
- * Tự động fallback sang Web Speech API nếu offline
- */
 function speakJapanese(text, customRate = null, onEndCallback = null) {
-  // Dọn dẹp thẻ Ruby / HTML
   const cleanText = text.replace(/<rt>.*?<\/rt>/g, '').replace(/<[^>]*>/g, '').replace(/[\[\]]/g, '').trim();
   if (!cleanText) return;
 
   const rate = customRate || STATE.ttsSpeed;
 
-  // Dừng mọi âm thanh đang phát
   if (currentAudioElement) {
     currentAudioElement.pause();
     currentAudioElement.currentTime = 0;
@@ -291,7 +257,6 @@ function speakJapanese(text, customRate = null, onEndCallback = null) {
     window.speechSynthesis.cancel();
   }
 
-  // Ưu tiên 1: Google HD Natural Studio Voice (Giọng người Nhật bản xứ cực kỳ truyền cảm, có cảm xúc)
   if (STATE.voiceEngine === 'google_hd') {
     try {
       const audioUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(cleanText)}&tl=ja&client=tw-ob`;
@@ -305,14 +270,12 @@ function speakJapanese(text, customRate = null, onEndCallback = null) {
       };
 
       audio.onerror = () => {
-        console.warn('Google HD audio stream failed or offline, fallback to Web Speech API');
         speakJapaneseWithWebSpeech(cleanText, rate, onEndCallback);
       };
 
       const playPromise = audio.play();
       if (playPromise !== undefined) {
         playPromise.catch(() => {
-          // Fallback if browser blocked audio autoplay without gesture
           speakJapaneseWithWebSpeech(cleanText, rate, onEndCallback);
         });
       }
@@ -321,7 +284,6 @@ function speakJapanese(text, customRate = null, onEndCallback = null) {
       return speakJapaneseWithWebSpeech(cleanText, rate, onEndCallback);
     }
   } else {
-    // Ưu tiên 2: Thiết bị cục bộ (Safari iOS Kyoko / Siri)
     return speakJapaneseWithWebSpeech(cleanText, rate, onEndCallback);
   }
 }
@@ -362,15 +324,14 @@ function parseRubySyntax(inputStr) {
 // EVENT LISTENERS
 // --------------------------------------------------------------------------
 function initEventListeners() {
-  // Voice Engine Selector (Google HD vs Apple/System)
+  // Voice Engine Selector
   const voiceEngineSelect = document.getElementById('global-voice-engine');
   if (voiceEngineSelect) {
     voiceEngineSelect.value = STATE.voiceEngine;
     voiceEngineSelect.addEventListener('change', (e) => {
       STATE.voiceEngine = e.target.value;
       localStorage.setItem('nhf_voice_engine', STATE.voiceEngine);
-      showToast(STATE.voiceEngine === 'google_hd' ? 'Đã bật giọng HD Người Nhật Bản Xứ 🎙️' : 'Đã chuyển sang giọng Thiết bị (iOS/Safari) 📱', 'success');
-      // Test audio immediately
+      showToast(STATE.voiceEngine === 'google_hd' ? 'Đã bật giọng HD Người Nhật Bản Xứ 🎙️' : 'Đã chuyển sang giọng Thiết bị (iOS) 📱', 'success');
       speakJapanese('こんにちは！よろしくお願いします。');
     });
   }
@@ -408,7 +369,7 @@ function initEventListeners() {
 
   // Tabs Navigation
   document.querySelectorAll('.nav-tab').forEach(tabBtn => {
-    tabBtn.addEventListener('click', (e) => {
+    tabBtn.addEventListener('click', () => {
       const targetTab = tabBtn.getAttribute('data-tab');
       switchTab(targetTab);
     });
@@ -495,7 +456,7 @@ function initEventListeners() {
 }
 
 // --------------------------------------------------------------------------
-// AI NATURAL PHRASE GENERATOR
+// LIVE AI NATURAL PHRASE SYNTHESIZER & TRANSLATOR
 // --------------------------------------------------------------------------
 function openAiModal() {
   document.getElementById('modal-ai')?.classList.add('active');
@@ -509,39 +470,119 @@ function closeAiModal() {
   document.getElementById('modal-ai')?.classList.remove('active');
 }
 
-function generateAiPhrases() {
+/**
+ * Intelligent Dynamic Japanese Generator
+ * Translates and contextualizes ANY Vietnamese sentence into natural casual & polite Japanese
+ */
+async function generateAiPhrases() {
   const promptInput = document.getElementById('ai-input-prompt');
-  const query = promptInput?.value.toLowerCase().trim() || '';
+  const query = promptInput?.value.trim() || '';
   const resultsContainer = document.getElementById('ai-results-container');
-  if (!resultsContainer) return;
+  const generateBtn = document.getElementById('btn-ai-generate');
+  if (!resultsContainer || !generateBtn) return;
 
   if (!query) {
     showToast('Vui lòng nhập ý bạn muốn nói bằng tiếng Việt!', 'info');
     return;
   }
 
-  // Find matches in AI Natural Patterns
-  let matchedPattern = AI_NATURAL_PATTERNS.find(pattern => 
-    pattern.keywords.some(kw => query.includes(kw.toLowerCase()))
-  );
+  // Show loading state
+  generateBtn.disabled = true;
+  generateBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> AI đang phân tích ngữ cảnh tiếng Nhật...';
+  resultsContainer.style.display = 'flex';
+  resultsContainer.innerHTML = '<div style="text-align:center; padding:1.5rem; color:var(--text-muted);"><i class="fa-solid fa-wand-magic-sparkles fa-spin" style="font-size:1.8rem; color:var(--accent-sakura); margin-bottom:0.5rem;"></i><br>Đang tạo câu giao tiếp thực tế và ngữ điệu...</div>';
+
+  // 1. Check for specific name introduction patterns (e.g. "tôi tên là Quý", "tên tớ là Nam")
+  const lower = query.toLowerCase();
+  const nameMatch = lower.match(/(?:tôi|tao|tớ|mình|em)?\s*(?:tên là|tên tôi là|tên tớ là|tên mình là|kêu là|gọi là)\s*([a-zA-Zàáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ\s]+)/i);
 
   let suggestions = [];
-  if (matchedPattern) {
-    if (matchedPattern.casual) suggestions.push(matchedPattern.casual);
-    if (matchedPattern.polite) suggestions.push(matchedPattern.polite);
-  } else {
-    // Intelligent Fallback Generator for any custom text
+
+  if (nameMatch && nameMatch[1]) {
+    const rawName = nameMatch[1].trim();
+    const cleanNameKey = rawName.toLowerCase();
+    const katakanaName = VN_NAME_TO_KANA[cleanNameKey] || rawName.toUpperCase();
+
     suggestions.push({
-      jp: `${promptInput.value}って日本語で何て言う？`,
-      ruby: `${escapeHtml(promptInput.value)}って<ruby>日本語<rt>にほんご</rt></ruby>で<ruby>何<rt>なん</rt></ruby>て<ruby>言<rt>い</rt></ruby>う？`,
-      romaji: `...tte nihongo de nante iu?`,
-      vn: `Cụm từ: "${promptInput.value}" trong tiếng Nhật giao tiếp`,
-      note: "Mẹo: Bạn có thể bấm 'Thêm vào sổ tay' và chỉnh sửa thêm chữ Kanji/Romaji cụ thể.",
-      level: "casual", category: "casual", situation: "Giao tiếp hỏi đáp tự nhiên"
+      jp: `${katakanaName}って呼んでね！よろしく！`,
+      ruby: `${katakanaName}って<ruby>呼<rt>よ</rt></ruby>んでね！よろしく！`,
+      romaji: `${katakanaName} tte yonde ne! Yoroshiku!`,
+      vn: `Cứ gọi mình là ${rawName} nhé! Rất vui được làm quen!`,
+      note: `Tên "${rawName}" phiên âm Katakana chuẩn là「${katakanaName}」. Câu này dùng với bạn bè đồng trang lứa.`,
+      level: "casual", category: "casual", situation: "Giới thiệu tên với bạn bè"
     });
+
+    suggestions.push({
+      jp: `初めまして、${katakanaName}と申します。どうぞよろしくお願いいたします。`,
+      ruby: `<ruby>初<rt>はじ</rt></ruby>めまして、${katakanaName}と<ruby>申<rt>もう</rt></ruby>します。どうぞよろしくお<ruby>願<rt>ねが</rt></ruby>いいたします。`,
+      romaji: `Hajimemashite, ${katakanaName} to moushimasu. Douzo yoroshiku onegai itashimasu.`,
+      vn: `Rất vui được gặp anh/chị, tôi tên là ${rawName}. Rất mong được anh/chị giúp đỡ ạ.`,
+      note: `Văn phong kính ngữ (Keigo) cực kỳ chuyên nghiệp và lịch thiệp khi phỏng vấn hoặc gặp khách hàng/cấp trên.`,
+      level: "business", category: "work", situation: "Giới thiệu bản thân trang trọng"
+    });
+  } else {
+    // 2. Check curated instant scenarios
+    let matchedPattern = AI_NATURAL_PATTERNS.find(pattern => 
+      pattern.keywords.some(kw => lower.includes(kw.toLowerCase()))
+    );
+
+    if (matchedPattern) {
+      if (matchedPattern.casual) suggestions.push(matchedPattern.casual);
+      if (matchedPattern.polite) suggestions.push(matchedPattern.polite);
+    } else {
+      // 3. Real-time Online AI Translation & Contextualization
+      try {
+        const transUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=vi&tl=ja&dt=t&q=${encodeURIComponent(query)}`;
+        const response = await fetch(transUrl);
+        const data = await response.json();
+        
+        let translatedJp = '';
+        if (data && data[0]) {
+          translatedJp = data[0].map(item => item[0]).join('');
+        }
+
+        if (translatedJp) {
+          // Generate Furigana formatted version
+          const rubyFormatted = autoInjectFurigana(translatedJp);
+
+          // Casual variation
+          suggestions.push({
+            jp: translatedJp,
+            ruby: rubyFormatted,
+            romaji: `Giao tiếp chuẩn tự nhiên`,
+            vn: query,
+            note: "Câu giao tiếp tự nhiên chuẩn người Nhật. Bạn có thể nghe phát âm và bấm lưu vào sổ tay.",
+            level: "casual", category: "casual", situation: "Giao tiếp hàng ngày"
+          });
+
+          // Polite variation if appropriate
+          if (!translatedJp.endsWith('です') && !translatedJp.endsWith('ます') && !translatedJp.endsWith('でしょうか？')) {
+            const politeJp = `${translatedJp}です。`;
+            suggestions.push({
+              jp: politeJp,
+              ruby: autoInjectFurigana(politeJp),
+              romaji: `Lịch sự (Desu/Masu)`,
+              vn: `${query} (Dạng lịch sự)`,
+              note: "Thêm 'です' ở cuối để nói lịch sự với người mới quen hoặc cấp trên.",
+              level: "polite", category: "casual", situation: "Giao tiếp lịch sự"
+            });
+          }
+        }
+      } catch (err) {
+        console.warn('Online AI Translation fallback error', err);
+      }
+    }
   }
 
-  resultsContainer.style.display = 'flex';
+  // Restore button
+  generateBtn.disabled = false;
+  generateBtn.innerHTML = '<i class="fa-solid fa-bolt"></i> Tạo câu giao tiếp thực tế';
+
+  if (suggestions.length === 0) {
+    resultsContainer.innerHTML = '<div style="color:var(--text-muted); text-align:center; padding:1rem;">Không thể dịch câu này lúc này. Hãy thử câu khác hoặc kiểm tra kết nối mạng nhé!</div>';
+    return;
+  }
+
   resultsContainer.innerHTML = suggestions.map((item, idx) => {
     const levelName = getLevelName(item.level);
     const levelClass = `tag-${item.level || 'casual'}`;
@@ -549,19 +590,19 @@ function generateAiPhrases() {
       <div class="ai-suggestion-card">
         <div class="ai-suggestion-header">
           <span class="tag-badge ${levelClass}">${levelName}</span>
-          <button class="btn btn-audio" style="width:34px; height:34px; font-size:0.9rem;" onclick="speakJapanese('${escapeQuote(item.jp)}')">
+          <button class="btn btn-audio" style="width:36px; height:36px; font-size:0.95rem;" onclick="speakJapanese('${escapeQuote(item.jp)}')">
             <i class="fa-solid fa-volume-high"></i>
           </button>
         </div>
-        <div style="font-family:var(--font-jp); font-size:1.3rem; font-weight:700; margin-bottom:0.35rem; color:var(--text-main);">
+        <div style="font-family:var(--font-jp); font-size:1.35rem; font-weight:700; margin-bottom:0.35rem; color:var(--text-main); line-height:1.7;">
           ${item.ruby}
         </div>
-        <div class="romaji-text" style="font-size:0.8rem; margin-bottom:0.25rem;">${item.romaji}</div>
-        <div style="font-size:0.95rem; font-weight:600; color:var(--text-main); margin-bottom:0.4rem;">${item.vn}</div>
-        <div style="font-size:0.75rem; color:var(--text-dim); line-height:1.4; margin-bottom:0.75rem;">
+        <div class="romaji-text" style="font-size:0.82rem; margin-bottom:0.35rem;">${item.romaji}</div>
+        <div style="font-size:0.98rem; font-weight:600; color:var(--text-main); margin-bottom:0.45rem;">${item.vn}</div>
+        <div style="font-size:0.78rem; color:var(--text-dim); line-height:1.45; margin-bottom:0.85rem;">
           <i class="fa-solid fa-lightbulb" style="color:var(--accent-gold); margin-right:4px;"></i> ${item.note}
         </div>
-        <button class="btn btn-primary" style="width:100%; font-size:0.8rem; padding:0.45rem 0.8rem;" onclick="saveAiGeneratedPhrase(${idx})">
+        <button class="btn btn-primary" style="width:100%; font-size:0.85rem; padding:0.5rem 0.8rem;" onclick="saveAiGeneratedPhrase(${idx})">
           <i class="fa-solid fa-plus"></i> Lưu câu này vào sổ tay
         </button>
       </div>
@@ -569,6 +610,26 @@ function generateAiPhrases() {
   }).join('');
 
   window._currentAiSuggestions = suggestions;
+}
+
+/**
+ * Helper to add Ruby Furigana to common Kanji
+ */
+function autoInjectFurigana(text) {
+  if (!text) return '';
+  const kanjiMap = {
+    "私": "わたし", "名前": "なまえ", "今日": "きょう", "疲": "つか", "飲": "の", "会": "かい",
+    "水": "みず", "冷": "ひや", "一": "ひと", "杯": "はい", "会計": "かいけい", "願": "ねが",
+    "何": "なん", "時": "とき", "分": "わ", "美味": "おい", "初": "はじ", "申": "もう",
+    "呼": "よ", "誰": "だれ", "行": "い", "来": "き", "食": "た", "見": "み", "聞": "き"
+  };
+
+  let result = text;
+  for (const [k, r] of Object.entries(kanjiMap)) {
+    const reg = new RegExp(k, 'g');
+    result = result.replace(reg, `<ruby>${k}<rt>${r}</rt></ruby>`);
+  }
+  return result;
 }
 
 window.saveAiGeneratedPhrase = function(index) {
@@ -591,7 +652,7 @@ window.saveAiGeneratedPhrase = function(index) {
     savePhrasesToStorage();
     renderPhrases();
     closeAiModal();
-    showToast('Đã lưu câu do AI gợi ý vào sổ tay cá nhân! ⭐', 'success');
+    showToast('Đã lưu câu do AI tạo vào sổ tay cá nhân! ⭐', 'success');
   }
 };
 
@@ -1091,7 +1152,7 @@ function exportPhrasesJSON() {
   const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(STATE.phrases, null, 2));
   const downloadAnchor = document.createElement('a');
   downloadAnchor.setAttribute("href", dataStr);
-  downloadAnchor.setAttribute("download", `nihongo_flow_backup_${new Date().toISOString().slice(0,10)}.json`);
+  downloadAnchor.setAttribute("download", `japaflow_backup_${new Date().toISOString().slice(0,10)}.json`);
   document.body.appendChild(downloadAnchor);
   downloadAnchor.click();
   downloadAnchor.remove();
@@ -1112,7 +1173,7 @@ function handleImportFile(e) {
         renderPhrases();
         showToast(`Đã khôi phục thành công ${importedData.length} câu vào sổ tay! 🎉`, 'success');
       } else {
-        showToast('File không đúng định dạng sao lưu của Nihongo Flow.', 'info');
+        showToast('File không đúng định dạng sao lưu của JapaFlow.', 'info');
       }
     } catch (err) {
       showToast('Lỗi đọc file JSON.', 'info');
