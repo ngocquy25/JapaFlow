@@ -1,6 +1,6 @@
 {
-  "name": "Nihongo Flow - Sổ tay Tiếng Nhật Thực tế",
-  "short_name": "NihongoFlow",
+  "name": "JapaFlow - Sổ tay Tiếng Nhật Thực tế",
+  "short_name": "JapaFlow",
   "description": "Lưu câu tiếng Nhật thực tế, phát âm chuẩn bản xứ, luyện Shadowing và giao tiếp",
   "start_url": "./index.html",
   "display": "standalone",
