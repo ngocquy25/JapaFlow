@@ -1,0 +1,162 @@
+/**
+ * Nihongo Flow - Dữ liệu mẫu câu giao tiếp thực tế đời sống
+ * Chia theo ngữ cảnh thực chiến, có Furigana, Romaji, Dịch nghĩa và Ghi chú văn hóa
+ */
+const SAMPLE_PHRASES = [
+  {
+    id: "p_01",
+    japanese: "とりあえず、生二つで！",
+    ruby: "<ruby>生<rt>なま</rt></ruby><ruby>二<rt>ふた</rt></ruby>つで",
+    romaji: "Toriaezu, nama futatsu de!",
+    vietnamese: "Trước mắt cho 2 cốc bia tươi nhé!",
+    category: "izakaya",
+    level: "casual",
+    situation: "Vừa ngồi vào quán nhậu/Izakaya",
+    note: "Câu cửa miệng số 1 khi vào quán nhậu Nhật. 'とりあえず' = 'Trước mắt cứ...', '生' = Bia tươi (nama-biiru).",
+    favorite: true,
+    history: []
+  },
+  {
+    id: "p_02",
+    japanese: "すみません、お会計お願いします。",
+    ruby: "すみません、お<ruby>会計<rt>かいけい</rt></ruby>お<ruby>願<rt>ねが</rt></ruby>いします。",
+    romaji: "Sumimasen, okaikei onegaishimasu.",
+    vietnamese: "Xin lỗi, cho tôi xin tính tiền ạ.",
+    category: "restaurant",
+    level: "polite",
+    situation: "Gọi thanh toán tại nhà hàng / quán ăn",
+    note: "Có thể làm dấu bắt chéo 2 ngón tay trỏ (hình chữ X) khi nói câu này nhân viên sẽ hiểu ngay.",
+    favorite: true,
+    history: []
+  },
+  {
+    id: "p_03",
+    japanese: "袋は大丈夫です、シールだけで。",
+    ruby: "<ruby>袋<rt>ふくろ</rt></ruby>は<ruby>大丈夫<rt>だいじょうぶ</rt></ruby>です、シールだけで。",
+    romaji: "Fukuro wa daijoubu desu, shiiru dake de.",
+    vietnamese: "Tôi không cần túi nilon đâu, chỉ cần dán tem là được rồi ạ.",
+    category: "konbini",
+    level: "polite",
+    situation: "Thanh toán tại cửa hàng tiện lợi (Combini)",
+    note: "Khi mua ít đồ ở Combini, nhân viên hỏi túi thì trả lời câu này để từ chối lịch sự và tiết kiệm tiền túi.",
+    favorite: false,
+    history: []
+  },
+  {
+    id: "p_04",
+    japanese: "温めてもらえますか？",
+    ruby: "<ruby>温<rt>あたた</rt></ruby>めてもらえますか？",
+    romaji: "Atatamete moraemasu ka?",
+    vietnamese: "Làm nóng (quay lò vi sóng) giúp tôi được không ạ?",
+    category: "konbini",
+    level: "polite",
+    situation: "Mua cơm hộp bento / đồ ăn ở Combini",
+    note: "Dùng khi bạn muốn nhân viên quay lò vi sóng cho hộp cơm bento.",
+    favorite: true,
+    history: []
+  },
+  {
+    id: "p_05",
+    japanese: "それな！めっちゃ分かる！",
+    ruby: "それな！めっちゃ<ruby>分<rt>わ</rt></ruby>かる！",
+    romaji: "Sore na! Meccha wakaru!",
+    vietnamese: "Chuẩn luôn! Đồng cảm sâu sắc luôn á!",
+    category: "casual",
+    level: "slang",
+    situation: "Tán gẫu với bạn bè, đồng ý hoàn toàn với ý kiến đối phương",
+    note: "Cực kỳ tự nhiên trong giới trẻ Nhật. 'それな' tương đương 'Chuẩn cơm mẹ nấu rồi'.",
+    favorite: true,
+    history: []
+  },
+  {
+    id: "p_06",
+    japanese: "お疲れ様です！お先に失礼します。",
+    ruby: "お<ruby>疲<rt>つか</rt></ruby>れ<ruby>様<rt>さま</rt></ruby>です！お<ruby>先<rt>さき</rt></ruby>に<ruby>失礼<rt>しつれい</rt></ruby>します。",
+    romaji: "Otsukaresama desu! Osaki ni shitsurei shimasu.",
+    vietnamese: "Mọi người vất vả rồi! Tôi xin phép về trước ạ.",
+    category: "work",
+    level: "business",
+    situation: "Khi tan sở ra về trước đồng nghiệp",
+    note: "Câu thần chú bắt buộc khi đi làm ở Nhật mỗi khi bạn ra về trước người khác.",
+    favorite: false,
+    history: []
+  },
+  {
+    id: "p_07",
+    japanese: "マジで？嘘でしょ？！",
+    ruby: "マジで？<ruby>嘘<rt>うそ</rt></ruby>でしょ？！",
+    romaji: "Maji de? Uso desho?!",
+    vietnamese: "Thật á? Không đùa đấy chứ?!",
+    category: "casual",
+    level: "casual",
+    situation: "Bày tỏ bất ngờ khi nghe tin sốc từ bạn bè",
+    note: "Ngữ điệu lên giọng ở cuối câu. Dùng hàng ngày với người cùng trang lứa.",
+    favorite: false,
+    history: []
+  },
+  {
+    id: "p_08",
+    japanese: "おすすめは何ですか？",
+    ruby: "おすすめは<ruby>何<rt>なん</rt></ruby>ですか？",
+    romaji: "Osusume wa nan desu ka?",
+    vietnamese: "Món gợi ý (best-seller) của quán là gì vậy ạ?",
+    category: "restaurant",
+    level: "polite",
+    situation: "Khi chưa biết gọi món gì trong quán ăn",
+    note: "Hỏi để nhân viên giới thiệu món ngon nhất hoặc đặc sản của quán.",
+    favorite: true,
+    history: []
+  },
+  {
+    id: "p_09",
+    japanese: "ちょっと手伝ってもらってもいい？",
+    ruby: "ちょっと<ruby>手伝<rt>てつだ</rt></ruby>ってもらってもいい？",
+    romaji: "Chotto tetsudatte morattemo ii?",
+    vietnamese: "Giúp tao/tớ một chút được không?",
+    category: "casual",
+    level: "casual",
+    situation: "Nhờ vả bạn bè hoặc người quen thân thiết",
+    note: "Giọng điệu nhẹ nhàng, thân mật. Nếu với người lạ/cấp trên dùng: '少々お手伝いいただけますでしょうか'.",
+    favorite: false,
+    history: []
+  },
+  {
+    id: "p_10",
+    japanese: "今ちょっとお時間よろしいでしょうか？",
+    ruby: "<ruby>今<rt>いま</rt></ruby>ちょっとお<ruby>時間<rt>じかん</rt></ruby>よろしいでしょうか？",
+    romaji: "Ima chotto ojikan yoroshii deshou ka?",
+    vietnamese: "Bây giờ anh/chị có tiện một vài phút không ạ?",
+    category: "work",
+    level: "polite",
+    situation: "Bắt đầu bắt chuyện để hỏi cấp trên/đối tác",
+    note: "Lịch sự tuyệt đối, tạo ấn tượng rất chuyên nghiệp.",
+    favorite: false,
+    history: []
+  },
+  {
+    id: "p_11",
+    japanese: "これ、試着してもいいですか？",
+    ruby: "これ、<ruby>試着<rt>しちゃく</rt></ruby>してもいいですか？",
+    romaji: "Kore, shichaku shitemo ii desu ka?",
+    vietnamese: "Cái này tôi mặc thử được không ạ?",
+    category: "shopping",
+    level: "polite",
+    situation: "Khi đi mua sắm quần áo",
+    note: "Shichaku = Thử đồ. Có thể chỉ vào quần áo và hỏi nhân viên.",
+    favorite: false,
+    history: []
+  },
+  {
+    id: "p_12",
+    japanese: "なるほどね！そういうことか！",
+    ruby: "なるほどね！そういうことか！",
+    romaji: "Naruhodo ne! Sou iu koto ka!",
+    vietnamese: "Ra là thế! Hiểu ra vấn đề rồi!",
+    category: "casual",
+    level: "casual",
+    situation: "Khi được bạn bè giải thích xong và mình vỡ lẽ ra",
+    note: "Tạo cảm giác phản xạ tự nhiên (Aizuchi), người Nhật rất thích nghe phản hồi này.",
+    favorite: true,
+    history: []
+  }
+];

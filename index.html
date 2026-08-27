@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Nihongo Flow - Sổ tay Giao tiếp Tiếng Nhật Thực tế & Shadowing</title>
+  <meta name="description" content="Ứng dụng học tiếng Nhật thực tế cá nhân hóa, phát âm tự nhiên chuẩn người bản xứ, furigana thông minh và luyện phản xạ giao tiếp.">
+  
+  <!-- PWA & iOS Safari Mobile Specific Meta Tags -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#ff4d6d">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="NihongoFlow">
+  <link rel="apple-touch-icon" href="icon-192.png">
+
+  <!-- Google Fonts: Zen Maru Gothic, Noto Sans JP, Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
+  
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="logo-wrapper">
+        <div class="logo-icon">語</div>
+        <div class="logo-text">
+          <h1>Nihongo Flow</h1>
+          <p>Sổ tay Giao tiếp Thực tế & Shadowing</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="btn-iphone-guide" class="btn-icon" title="Hướng dẫn cài đặt lên màn hình iPhone (PWA)">
+          <i class="fa-brands fa-apple" style="color:var(--accent-cyan); font-size:1.15rem;"></i>
+        </button>
+        <button id="btn-theme-toggle" class="btn-icon" title="Đổi giao diện (Dark / Sakura Light)">
+          <i class="fa-solid fa-moon"></i>
+        </button>
+        <button id="btn-export" class="btn-icon" title="Xuất dữ liệu câu đã lưu (Backup JSON)">
+          <i class="fa-solid fa-file-export"></i>
+        </button>
+        <label for="import-file-input" class="btn-icon" title="Nhập dữ liệu (Import JSON)" style="margin:0; cursor:pointer;">
+          <i class="fa-solid fa-file-import"></i>
+          <input type="file" id="import-file-input" accept=".json" style="display:none;">
+        </label>
+        <button id="btn-ai-assistant" class="btn btn-ai-sparkle" title="Trợ lý AI gợi ý câu tiếng Nhật tự nhiên theo ý bạn">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+          <span class="desktop-only">Trợ lý AI</span>
+        </button>
+        <button id="btn-add-phrase" class="btn btn-primary">
+          <i class="fa-solid fa-plus"></i>
+          <span class="desktop-only">Thêm câu</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Navigation Tabs -->
+    <nav class="nav-tabs">
+      <button class="nav-tab active" data-tab="phrasebook">
+        <i class="fa-solid fa-book-bookmark"></i>
+        <span>Sổ tay câu</span>
+      </button>
+      <button class="nav-tab" data-tab="flashcard">
+        <i class="fa-solid fa-layer-group"></i>
+        <span>Flashcard</span>
+      </button>
+      <button class="nav-tab" data-tab="shadowing">
+        <i class="fa-solid fa-headphones-simple"></i>
+        <span>Nghe tự động</span>
+      </button>
+      <button class="nav-tab" data-tab="voicelab">
+        <i class="fa-solid fa-microphone-lines"></i>
+        <span>Phòng thu</span>
+      </button>
+    </nav>
+
+    <!-- ==========================================================================
+         TAB 1: PHRASEBOOK (SỔ TAY CÂU NÓI)
+         ========================================================================== -->
+    <section id="tab-phrasebook" class="tab-content active">
+      <!-- Search & Filter Controls -->
+      <div class="control-bar">
+        <div class="search-box">
+          <i class="fa-solid fa-magnifying-glass search-icon"></i>
+          <input type="text" id="search-input" placeholder="Tìm câu tiếng Nhật, Romaji, tiếng Việt hoặc ngữ cảnh...">
+        </div>
+        <div class="filters-group">
+          <select id="filter-level" class="filter-select">
+            <option value="all">Tất cả sắc thái</option>
+            <option value="casual">Bạn bè thân mật (Tameguchi)</option>
+            <option value="polite">Lịch sự thường dùng (Desu/Masu)</option>
+            <option value="business">Công sở / Trang trọng (Keigo)</option>
+            <option value="slang">Tiếng lóng thực tế (Slang)</option>
+          </select>
+          <div class="speed-control">
+            <i class="fa-solid fa-microphone"></i>
+            <span>Nguồn giọng:</span>
+            <select id="global-voice-engine">
+              <option value="google_hd" selected>🎙️ Giọng Bản Xứ HD</option>
+              <option value="system">📱 Giọng Thiết Bị (iOS)</option>
+            </select>
+          </div>
+          <div class="speed-control">
+            <i class="fa-solid fa-gauge-high"></i>
+            <span>Tốc độ:</span>
+            <select id="global-tts-speed">
+              <option value="0.75">0.75x (Chậm)</option>
+              <option value="0.9">0.9x (Vừa)</option>
+              <option value="1.0" selected>1.0x (Tự nhiên)</option>
+              <option value="1.15">1.15x (Nhanh)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Category Pills -->
+      <div class="category-pills" id="category-pills">
+        <button class="cat-pill active" data-cat="all">Tất cả (<span id="count-all">0</span>)</button>
+        <button class="cat-pill" data-cat="favorite">⭐ Yêu thích (<span id="count-fav">0</span>)</button>
+        <button class="cat-pill" data-cat="izakaya">🍻 Quán nhậu</button>
+        <button class="cat-pill" data-cat="restaurant">🍜 Quán ăn</button>
+        <button class="cat-pill" data-cat="konbini">🏪 Combini</button>
+        <button class="cat-pill" data-cat="shopping">🛍️ Mua sắm</button>
+        <button class="cat-pill" data-cat="casual">💬 Tán gẫu</button>
+        <button class="cat-pill" data-cat="work">💼 Công việc</button>
+      </div>
+
+      <!-- Phrase Grid -->
+      <div class="phrase-grid" id="phrase-grid">
+        <!-- Javascript renders phrase cards dynamically -->
+      </div>
+      
+      <div id="empty-state" style="display:none; text-align:center; padding: 4rem 1rem; color: var(--text-muted);">
+        <i class="fa-regular fa-folder-open" style="font-size: 3rem; margin-bottom: 1rem; color: var(--text-dim);"></i>
+        <h3>Chưa có câu nào trong danh mục này</h3>
+        <p style="font-size: 0.9rem; margin-top: 0.5rem;">Hãy bấm nút "Thêm câu mới" hoặc dùng "Trợ lý AI" để lưu lại những câu bạn muốn học nhé!</p>
+      </div>
+    </section>
+
+    <!-- ==========================================================================
+         TAB 2: FLASHCARD SRS PRACTICE
+         ========================================================================== -->
+    <section id="tab-flashcard" class="tab-content" style="display:none;">
+      <div class="practice-container">
+        <div class="practice-progress">
+          <span>Tiến độ phản xạ</span>
+          <span id="fc-counter">1 / 10</span>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="fc-progress-fill"></div>
+        </div>
+
+        <!-- 3D Flip Card -->
+        <div class="flashcard-3d-wrapper" id="flashcard-card-box">
+          <div class="flashcard" id="flashcard-element">
+            <!-- Mặt trước (Tiếng Việt & Ngữ cảnh gợi ý) -->
+            <div class="flashcard-front">
+              <div class="hint-pill" id="fc-situation">Ngữ cảnh: Vừa ngồi vào quán nhậu</div>
+              <div class="flashcard-vn" id="fc-vietnamese">Trước mắt cho 2 cốc bia tươi nhé!</div>
+              <p style="font-size: 0.8rem; color: var(--text-dim); margin-top: 1rem;">
+                <i class="fa-solid fa-hand-pointer"></i> Chạm vào thẻ để xem tiếng Nhật & nghe phát âm
+              </p>
+            </div>
+            <!-- Mặt sau (Tiếng Nhật có Furigana + Romaji + Nút phát âm) -->
+            <div class="flashcard-back">
+              <div class="flashcard-jp" id="fc-japanese">とりあえず、生二つで！</div>
+              <div class="romaji-text" id="fc-romaji">Toriaezu, nama futatsu de!</div>
+              <div class="note-box" id="fc-note" style="margin-top: 0.5rem; max-width: 90%;">Ghi chú ngữ cảnh...</div>
+              <button class="btn btn-audio" id="btn-fc-audio" style="margin-top: 1rem;" title="Phát âm">
+                <i class="fa-solid fa-volume-high"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="practice-controls">
+          <button id="btn-fc-prev" class="btn btn-secondary"><i class="fa-solid fa-arrow-left"></i> Trước</button>
+          <button id="btn-fc-flip" class="btn btn-primary"><i class="fa-solid fa-rotate"></i> Lật thẻ</button>
+          <button id="btn-fc-next" class="btn btn-secondary">Tiếp <i class="fa-solid fa-arrow-right"></i></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================================================
+         TAB 3: HANDS-FREE SHADOWING PLAYER
+         ========================================================================== -->
+    <section id="tab-shadowing" class="tab-content" style="display:none;">
+      <div class="shadow-player-box" id="shadow-player-card">
+        <div class="tag-badge tag-category" style="display:inline-block; margin-bottom: 0.75rem;">
+          <i class="fa-solid fa-headphones"></i> Chế độ Tự động Nghe & Nhại giọng (Shadowing)
+        </div>
+        <h2 id="shadow-jp" style="font-family: var(--font-jp); font-size: 1.8rem; margin: 0.5rem 0; min-height: 50px;">
+          とりあえず、生二つで！
+        </h2>
+        <p id="shadow-romaji" style="color: var(--accent-cyan); font-weight: 500; margin-bottom: 0.5rem;">
+          Toriaezu, nama futatsu de!
+        </p>
+        <p id="shadow-vn" style="font-size: 1.15rem; color: var(--text-main); font-weight: 600;">
+          Trước mắt cho 2 cốc bia tươi nhé!
+        </p>
+
+        <!-- Waveform Visualizer -->
+        <div class="player-visualizer">
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+        </div>
+
+        <div style="margin: 1.5rem 0; display: flex; justify-content: center; gap: 1rem; align-items: center;">
+          <button id="btn-shadow-prev" class="btn-icon"><i class="fa-solid fa-backward-step"></i></button>
+          <button id="btn-shadow-play" class="btn btn-primary" style="padding: 0.8rem 1.8rem; font-size: 1.1rem; border-radius: var(--radius-full);">
+            <i class="fa-solid fa-play"></i> <span id="shadow-play-text">Bắt đầu phát</span>
+          </button>
+          <button id="btn-shadow-next" class="btn-icon"><i class="fa-solid fa-forward-step"></i></button>
+        </div>
+
+        <div style="font-size: 0.82rem; color: var(--text-dim); line-height: 1.6; max-width: 460px; margin: 0 auto;">
+          💡 <strong>Mẹo luyện Shadowing:</strong> Đeo tai nghe khi đang đi tàu/xe hoặc làm việc nhà. Khi máy đọc xong tiếng Nhật, bạn nhại lại to rõ ràng đúng theo ngữ điệu vừa nghe (nghỉ 2.5s trước câu tiếp).
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================================================
+         TAB 4: VOICE LAB (LUYỆN NGỮ ĐIỆU & THU ÂM SO SÁNH)
+         ========================================================================== -->
+    <section id="tab-voicelab" class="tab-content" style="display:none;">
+      <div class="practice-container">
+        <div style="background: var(--bg-card); padding: 1.5rem; border-radius: var(--radius-lg); border: 1px solid var(--border-color); text-align: center;">
+          <h3 style="margin-bottom: 0.5rem;"><i class="fa-solid fa-microphone-lines" style="color: var(--accent-sakura);"></i> Phòng Thu Âm & So Sánh Ngữ Điệu</h3>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+            Chọn 1 câu bất kỳ để nghe giọng người Nhật bản xứ, sau đó bấm Micro thu âm giọng của bạn để đối chiếu trực tiếp.
+          </p>
+
+          <div class="form-group" style="text-align: left;">
+            <label>Chọn câu luyện tập:</label>
+            <select id="voicelab-select" class="form-control" style="font-size: 1rem; font-weight: 600;">
+              <!-- Javascript populates phrases options -->
+            </select>
+          </div>
+
+          <div style="background: var(--bg-secondary); padding: 1.25rem; border-radius: var(--radius-md); margin: 1.25rem 0;">
+            <div id="vl-jp" style="font-family: var(--font-jp); font-size: 1.6rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.35rem;"></div>
+            <div id="vl-romaji" style="color: var(--accent-cyan); font-weight: 500; margin-bottom: 0.35rem;"></div>
+            <div id="vl-vn" style="color: var(--text-muted); font-size: 0.95rem;"></div>
+          </div>
+
+          <div style="display: flex; justify-content: center; gap: 1rem; margin: 1.5rem 0; flex-wrap: wrap;">
+            <button id="btn-vl-native-audio" class="btn btn-secondary">
+              <i class="fa-solid fa-volume-high" style="color: var(--accent-sakura);"></i> Nghe bản xứ
+            </button>
+            <button id="btn-vl-record" class="btn btn-primary">
+              <i class="fa-solid fa-microphone"></i> <span id="vl-record-text">Bấm để thu âm</span>
+            </button>
+            <button id="btn-vl-play-user" class="btn btn-secondary" style="display:none;">
+              <i class="fa-solid fa-play" style="color: var(--accent-green);"></i> Nghe lại giọng bạn
+            </button>
+          </div>
+
+          <div id="vl-feedback-box" style="font-size: 0.85rem; color: var(--text-dim); margin-top: 1rem;">
+            Chuẩn bị micro và thử thách phát âm chuẩn ngữ điệu người Nhật nhé!
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================================================
+         MODAL: TRỢ LÝ AI GỢI Ý CÂU THEO Ý BẠN (AI NATURAL GENERATOR)
+         ========================================================================== -->
+    <div class="modal-overlay" id="modal-ai">
+      <div class="modal-content" style="max-width: 620px;">
+        <div class="modal-header">
+          <h2 style="display:flex; align-items:center; gap:0.5rem; color: var(--accent-cyan);">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Trợ lý AI Tạo câu Thực tế
+          </h2>
+          <button class="btn-icon" id="btn-close-ai"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+            Gõ ý bạn muốn nói bằng tiếng Việt (hoặc từ khóa), AI sẽ tự động tạo câu tiếng Nhật chuẩn người bản xứ nói ngoài đời kèm Furigana và sắc thái:
+          </p>
+          <div class="form-group">
+            <input type="text" id="ai-input-prompt" class="form-control" placeholder="Ví dụ: Hôm nay tao mệt quá không muốn đi nhậu, Xin thêm nước lọc, Cho em xin tính tiền..." style="font-size: 0.95rem;">
+          </div>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem;">
+            <button type="button" class="btn-card-small quick-prompt-chip" data-prompt="Hôm nay tao mệt quá không muốn đi nhậu">🍻 Từ chối nhậu</button>
+            <button type="button" class="btn-card-small quick-prompt-chip" data-prompt="Cho tớ xin thêm một cốc nước lọc">💧 Xin thêm nước</button>
+            <button type="button" class="btn-card-small quick-prompt-chip" data-prompt="Cái này bao nhiêu tiền chia tiền riêng">💰 Tính tiền / Chia tiền</button>
+            <button type="button" class="btn-card-small quick-prompt-chip" data-prompt="Món này ngon vãi đỉnh chóp">🍜 Khen đồ ăn ngon</button>
+          </div>
+          <button id="btn-ai-generate" class="btn btn-primary" style="width: 100%; margin-bottom: 1.25rem;">
+            <i class="fa-solid fa-bolt"></i> Tạo câu giao tiếp thực tế
+          </button>
+
+          <!-- AI Results Output -->
+          <div id="ai-results-container" style="display:none; display: flex; flex-direction: column; gap: 1rem;">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================================================
+         MODAL: HƯỚNG DẪN CÀI ĐẶT LÊN IPHONE (PWA ADD TO HOME SCREEN)
+         ========================================================================== -->
+    <div class="modal-overlay" id="modal-iphone">
+      <div class="modal-content" style="max-width: 520px; text-align: center;">
+        <div class="modal-header">
+          <h2 style="display:flex; align-items:center; gap:0.5rem; margin: 0 auto;">
+            <i class="fa-brands fa-apple" style="color:var(--text-main);"></i> Cài đặt lên iPhone của bạn
+          </h2>
+          <button class="btn-icon" id="btn-close-iphone" style="position:absolute; right:1.5rem;"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div style="padding: 1rem 0; text-align: left; line-height: 1.7; font-size: 0.92rem;">
+          <p style="margin-bottom: 1.25rem; color: var(--text-muted);">
+            Để dùng <strong>Nihongo Flow</strong> toàn màn hình như một ứng dụng iOS chính thức trên iPhone (không dính thanh địa chỉ web, hỗ trợ offline & âm thanh bản xứ):
+          </p>
+          
+          <div class="iphone-step-card">
+            <div class="step-num">1</div>
+            <div>Mở trang này trên trình duyệt <strong>Safari</strong> của iPhone.</div>
+          </div>
+
+          <div class="iphone-step-card">
+            <div class="step-num">2</div>
+            <div>Bấm vào biểu tượng <strong>Chia sẻ (Share)</strong> <i class="fa-solid fa-arrow-up-from-bracket" style="color:var(--accent-cyan); margin: 0 4px;"></i> ở thanh dưới cùng của Safari.</div>
+          </div>
+
+          <div class="iphone-step-card">
+            <div class="step-num">3</div>
+            <div>Cuộn xuống và chọn <strong>"Thêm vào Màn hình chính" (Add to Home Screen)</strong> <i class="fa-regular fa-square-plus" style="color:var(--accent-sakura); margin: 0 4px;"></i>.</div>
+          </div>
+
+          <div class="iphone-step-card">
+            <div class="step-num">4</div>
+            <div>Bấm <strong>"Thêm" (Add)</strong> ở góc trên bên phải. Xong! Ứng dụng sẽ xuất hiện ngay trên màn hình chính của bạn.</div>
+          </div>
+        </div>
+        <button class="btn btn-primary" id="btn-ok-iphone" style="width: 100%; margin-top: 0.5rem;">Đã hiểu</button>
+      </div>
+    </div>
+
+    <!-- ==========================================================================
+         MODAL: THÊM / SỬA CÂU NÓI THỦ CÔNG
+         ========================================================================== -->
+    <div class="modal-overlay" id="modal-phrase">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 id="modal-title">Thêm câu tiếng Nhật mới</h2>
+          <button class="btn-icon" id="btn-close-modal"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form id="phrase-form">
+          <input type="hidden" id="form-id">
+          
+          <div class="form-group">
+            <label for="form-japanese">Câu tiếng Nhật (Kanji/Kana) *</label>
+            <input type="text" id="form-japanese" class="form-control" placeholder="Ví dụ: とりあえず、生二つで！ hoặc [生|なま] [二|ふた]つで" required autocomplete="off">
+            <div class="form-hint">
+              💡 Mẹo gõ Furigana siêu nhanh: dùng cú pháp <code>[漢字|cách đọc]</code> (ví dụ: <code>[生|なま]ビール</code>)
+            </div>
+            <!-- Furigana Preview -->
+            <div class="furigana-preview" id="form-ruby-preview">
+              <span style="color: var(--text-dim); font-size: 0.85rem;">Xem trước hiển thị Furigana sẽ xuất hiện tại đây...</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="form-romaji">Romaji (Phiên âm chữ cái Latinh)</label>
+            <input type="text" id="form-romaji" class="form-control" placeholder="Ví dụ: Toriaezu, nama futatsu de!">
+          </div>
+
+          <div class="form-group">
+            <label for="form-vietnamese">Dịch nghĩa tiếng Việt (Sát ngữ cảnh) *</label>
+            <input type="text" id="form-vietnamese" class="form-control" placeholder="Ví dụ: Trước mắt cho 2 cốc bia tươi nhé!" required>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+              <label for="form-category">Ngữ cảnh / Chủ đề</label>
+              <select id="form-category" class="form-control">
+                <option value="izakaya">🍻 Quán nhậu Izakaya</option>
+                <option value="restaurant">🍜 Quán ăn / Nhà hàng</option>
+                <option value="konbini">🏪 Cửa hàng tiện lợi</option>
+                <option value="shopping">🛍️ Mua sắm</option>
+                <option value="casual">💬 Tán gẫu bạn bè</option>
+                <option value="work">💼 Công việc / Đi làm</option>
+                <option value="other">📌 Chủ đề khác</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="form-level">Sắc thái văn phong</label>
+              <select id="form-level" class="form-control">
+                <option value="casual">Bạn bè thân mật (Tameguchi)</option>
+                <option value="polite">Lịch sự thông dụng (Desu/Masu)</option>
+                <option value="business">Công sở / Trang trọng (Keigo)</option>
+                <option value="slang">Tiếng lóng đời sống (Slang)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="form-situation">Hoàn cảnh dùng cụ thể</label>
+            <input type="text" id="form-situation" class="form-control" placeholder="Ví dụ: Vừa ngồi vào bàn quán nhậu">
+          </div>
+
+          <div class="form-group">
+            <label for="form-note">Ghi chú lưu ý / Văn hóa (nếu có)</label>
+            <textarea id="form-note" class="form-control" rows="2" placeholder="Ví dụ: Câu cửa miệng người Nhật hay dùng nhất..."></textarea>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" id="btn-cancel-modal">Hủy</button>
+            <button type="submit" class="btn btn-primary" id="btn-save-phrase">
+              <i class="fa-solid fa-check"></i> Lưu vào sổ tay
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div class="toast-container" id="toast-container"></div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="sample_data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
